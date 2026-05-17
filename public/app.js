@@ -190,39 +190,61 @@ form.addEventListener("submit", (e) => {
 });
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let userWantsMicOn = false;
+let committedText = "";
+let restartAttempts = 0;
+
 if (SR) {
   recognition = new SR();
   recognition.lang = "en-US";
   recognition.interimResults = true;
-  recognition.continuous = false;
+  recognition.continuous = true;
 
   recognition.onresult = (e) => {
     let interim = "";
-    let finalText = "";
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) finalText += t;
-      else interim += t;
+      if (e.results[i].isFinal) {
+        committedText = (committedText + " " + t).trim();
+      } else {
+        interim += t;
+      }
     }
-    if (finalText) input.value = (input.value + " " + finalText).trim();
-    else input.value = interim;
+    input.value = (committedText + " " + interim).trim();
     input.dispatchEvent(new Event("input"));
+    restartAttempts = 0;
   };
+
   recognition.onend = () => {
+    if (userWantsMicOn && restartAttempts < 10) {
+      restartAttempts++;
+      try {
+        recognition.start();
+        return;
+      } catch {}
+    }
     recognizing = false;
+    userWantsMicOn = false;
+    restartAttempts = 0;
     micBtn.classList.remove("recording");
   };
-  recognition.onerror = () => {
-    recognizing = false;
-    micBtn.classList.remove("recording");
+
+  recognition.onerror = (e) => {
+    if (e.error === "not-allowed" || e.error === "audio-capture" || e.error === "service-not-allowed") {
+      userWantsMicOn = false;
+    }
   };
 
   micBtn.addEventListener("click", () => {
     if (recognizing) {
+      userWantsMicOn = false;
       recognition.stop();
       return;
     }
     try {
+      committedText = input.value;
+      restartAttempts = 0;
+      userWantsMicOn = true;
       recognition.start();
       recognizing = true;
       micBtn.classList.add("recording");
