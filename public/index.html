@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Session</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="title">Session</div>
+    <div class="controls">
+      <button id="muteBtn" class="ghost" title="Mute voice">voice on</button>
+      <button id="endBtn" class="ghost" title="End session and save notes">end session</button>
+    </div>
+  </header>
+
+  <div id="disclaimer" class="disclaimer" hidden>
+    <p>
+      I am an AI modeled on Dr. Orna Guralnik's therapeutic style. I am not a
+      replacement for a licensed therapist. If you are in crisis, 988 reaches the
+      Suicide &amp; Crisis Lifeline in the US.
+    </p>
+    <button id="dismissDisclaimer" class="ghost small">dismiss</button>
+  </div>
+
+  <main id="thread" class="thread" aria-live="polite"></main>
+
+  <form id="composer" class="composer" autocomplete="off">
+    <button type="button" id="micBtn" class="mic" title="Push to talk">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 1 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/>
+      </svg>
+    </button>
+    <textarea
+      id="input"
+      rows="1"
+      placeholder="What's on your mind?"
+      aria-label="Message"
+    ></textarea>
+    <button type="submit" id="sendBtn" class="send" aria-label="Send">send</button>
+  </form>
+
+  <script src="/app.js" type="module"></script>
+</body>
+</html>
