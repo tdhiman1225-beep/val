@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkdirSync } from "node:fs";
@@ -7,9 +7,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const dataDir = join(__dirname, "data");
 mkdirSync(dataDir, { recursive: true });
 
-const db = new Database(join(dataDir, "therapy.db"));
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
+const db = new DatabaseSync(join(dataDir, "therapy.db"));
+db.exec("PRAGMA journal_mode = WAL");
+db.exec("PRAGMA foreign_keys = ON");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS sessions (
@@ -35,6 +35,7 @@ db.exec(`
 `);
 
 const now = () => new Date().toISOString();
+const toNum = (v) => (typeof v === "bigint" ? Number(v) : v);
 
 const stmts = {
   openSession: db.prepare("INSERT INTO sessions (started_at) VALUES (?)"),
@@ -61,9 +62,9 @@ const stmts = {
 
 export function getOrStartSession() {
   const last = stmts.currentSession.get();
-  if (last && !last.ended_at) return last;
+  if (last && !last.ended_at) return { ...last, id: toNum(last.id) };
   const info = stmts.openSession.run(now());
-  return { id: info.lastInsertRowid, started_at: now(), ended_at: null };
+  return { id: toNum(info.lastInsertRowid), started_at: now(), ended_at: null };
 }
 
 export function startNewSession() {
@@ -72,7 +73,7 @@ export function startNewSession() {
     stmts.closeSession.run(now(), last.id);
   }
   const info = stmts.openSession.run(now());
-  return { id: info.lastInsertRowid, started_at: now(), ended_at: null };
+  return { id: toNum(info.lastInsertRowid), started_at: now(), ended_at: null };
 }
 
 export function endSession(sessionId) {
