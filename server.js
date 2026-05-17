@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { networkInterfaces } from "node:os";
 import {
   getOrStartSession,
   startNewSession,
@@ -201,6 +202,29 @@ app.get("/api/config", (_req, res) => {
   });
 });
 
+function listAccessibleUrls() {
+  const urls = [`http://localhost:${PORT}`];
+  const tailscale = [];
+  const lan = [];
+  for (const ifaces of Object.values(networkInterfaces())) {
+    for (const iface of ifaces || []) {
+      if (iface.family !== "IPv4" || iface.internal) continue;
+      const url = `http://${iface.address}:${PORT}`;
+      if (iface.address.startsWith("100.")) tailscale.push(url);
+      else lan.push(url);
+    }
+  }
+  return { local: urls, lan, tailscale };
+}
+
 app.listen(PORT, () => {
-  console.log(`Therapist listening on http://localhost:${PORT}`);
+  const { local, lan, tailscale } = listAccessibleUrls();
+  console.log("\nTherapist is listening.\n");
+  for (const u of local) console.log(`  local:     ${u}`);
+  for (const u of lan) console.log(`  same wifi: ${u}`);
+  for (const u of tailscale) console.log(`  tailscale: ${u}`);
+  if (tailscale.length === 0) {
+    console.log("\n  (no tailscale interface detected — start tailscale and reload)");
+  }
+  console.log("");
 });
